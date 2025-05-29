@@ -44,6 +44,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [showStats, setShowStats] = useState(false);
+  const [showGenreMenu, setShowGenreMenu] = useState(false);
 
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -649,12 +650,6 @@ function App() {
               <h1 className="text-xl font-bold text-blue-600">MyBookList</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowStats(!showStats)}
-                className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded hover:border-blue-500 hover:text-blue-600"
-              >
-                {'📊'} 統計
-              </button>
               {user && (
                 <div className="flex items-center gap-3">
                   <div className="text-sm text-gray-600">
@@ -718,7 +713,59 @@ function App() {
         </div>
 
         <div className="mb-4">
-          <div className="flex flex-wrap gap-2 mb-4">
+          {/* モバイル: アコーディオン */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setShowGenreMenu(!showGenreMenu)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
+            >
+              <span className="font-medium">
+                {selectedGenre === 'all' 
+                  ? `すべて (${books.length})` 
+                  : `${genres.find(g => g.id === selectedGenre)?.name} (${books.filter(book => book.genre === selectedGenre).length})`
+                }
+              </span>
+              <span className={`transform transition-transform duration-200 ${showGenreMenu ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+            
+            {showGenreMenu && (
+              <div className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                <button
+                  onClick={() => {
+                    setSelectedGenre('all');
+                    setShowGenreMenu(false);
+                  }}
+                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                    selectedGenre === 'all' ? 'bg-blue-50 text-blue-600 font-medium' : ''
+                  }`}
+                >
+                  すべて ({books.length})
+                </button>
+                {genres.map(genre => {
+                  const count = books.filter(book => book.genre === genre.id).length;
+                  return (
+                    <button
+                      key={genre.id}
+                      onClick={() => {
+                        setSelectedGenre(genre.id);
+                        setShowGenreMenu(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-t border-gray-100 transition-colors ${
+                        selectedGenre === genre.id ? 'bg-blue-50 text-blue-600 font-medium' : ''
+                      }`}
+                    >
+                      {genre.name} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* デスクトップ: 既存のボタン表示 */}
+          <div className="hidden md:flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedGenre('all')}
               className={`px-3 py-2 text-sm rounded-full transition-colors ${
@@ -748,30 +795,41 @@ function App() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-          >
-            <option value="added">登録順</option>
-            <option value="rating">評価順</option>
-            <option value="favorite">お気に入り順</option>
-            <option value="pages">ページ数順</option>
-            <option value="year">出版年順</option>
-            <option value="author">著者順</option>
-          </select>
-          
-          <div className="flex-1"></div>
-          
-          {user && (
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 shadow-sm"
-            >
-              {'➕'} 本を追加
-            </button>
-          )}
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowStats(!showStats)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+              >
+                {'📊'} <span className="font-medium">統計</span>
+              </button>
+              
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-medium"
+              >
+                <option value="added">📅 登録順</option>
+                <option value="rating">⭐ 評価順</option>
+                <option value="favorite">❤️ お気に入り順</option>
+                <option value="pages">📖 ページ数順</option>
+                <option value="year">📆 出版年順</option>
+                <option value="author">👤 著者順</option>
+              </select>
+            </div>
+            
+            <div className="flex-1"></div>
+            
+            {user && (
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md font-medium"
+              >
+                {'➕'} 本を追加
+              </button>
+            )}
+          </div>
         </div>
 
         {showAddForm && user && (
@@ -988,7 +1046,7 @@ function App() {
                     <img
                       src={book.thumbnail}
                       alt={book.title}
-                      className="w-full h-48 sm:h-56 lg:h-64 object-cover cursor-pointer"
+                      className="w-full h-48 sm:h-56 lg:h-64 object-contain bg-gray-100 cursor-pointer"
                       onClick={() => openBookModal(book)}
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -1004,86 +1062,78 @@ function App() {
                   </div>
                   
                   {book.favorite && (
-                    <span className="absolute top-2 left-2 text-red-500 text-lg">❤️</span>
+                    <span className="absolute top-3 left-3 text-red-500 text-xl drop-shadow-md">♥</span>
                   )}
+                  
+                  {/* ジャンルを画像上に配置 */}
+                  <div className="absolute bottom-2 right-2">
+                    <span className="bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                      {genreInfo?.name || book.genre}
+                    </span>
+                  </div>
                 </div>
                 
-                <div className="p-2 sm:p-3">
-                  <h3 className="font-semibold text-sm sm:text-base mb-1 line-clamp-2">{book.title}</h3>
-                  <p className="text-xs text-gray-600 mb-2">{book.author}</p>
-                  
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="text-gray-500">
-                      {book.pageCount > 0 ? `${book.pageCount}ページ` : ''}
-                    </span>
-                    {book.publishedDate && (
-                      <span className="text-gray-500">
-                        {new Date(book.publishedDate).getFullYear()}年
-                      </span>
-                    )}
-                  </div>
+                <div className="p-3 sm:p-4">
+                  <h3 className="font-semibold text-base mb-2 line-clamp-2">{book.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{book.author}</p>
                   
                   {book.rating > 0 && (
-                    <div className="mb-2 scale-75 sm:scale-90 origin-left">
+                    <div className="mb-3">
                       <StarRating rating={book.rating} readonly />
                     </div>
                   )}
                   
                   {book.comment && (
-                    <p className="text-gray-500 text-xs mb-2 line-clamp-2">{book.comment}</p>
+                    <p className="text-gray-500 text-sm mb-3 line-clamp-2">{book.comment}</p>
                   )}
                   
                   {/* Amazon URL */}
                   {book.amazonUrl && (
-                    <div className="mb-2">
+                    <div className="mb-3">
                       <a 
                         href={book.amazonUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-800 hover:underline"
+                        className="inline-flex items-center gap-1 text-sm text-orange-600 hover:text-orange-800 hover:underline"
                       >
                         🛒 Amazon
                       </a>
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between">
-                    <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
-                      {genreInfo?.name || book.genre}
-                    </span>
-                    
-                    <div className="flex gap-1">
-                      {user && (
-                        <>
-                          <button
-                            onClick={() => toggleFavorite(book.id)}
-                            className="p-1 hover:bg-gray-100 rounded"
-                            title="お気に入り"
-                          >
-                            <span className={`text-sm ${book.favorite ? 'text-red-500' : 'text-gray-400'}`}>
-                              ❤️
-                            </span>
-                          </button>
-                          
-                          <button
-                            onClick={() => handleEditBook(book.id)}
-                            className="p-1 hover:bg-gray-100 rounded"
-                            title="編集"
-                          >
-                            <span className="text-sm">✏️</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => handleDeleteBook(book.id)}
-                            className="p-1 hover:bg-gray-100 rounded text-red-500"
-                            title="削除"
-                          >
-                            <span className="text-sm">🗑️</span>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  <div className="flex justify-end">
+  <div className="flex gap-1 sm:gap-2">
+    {user && (
+      <>
+        <button
+          onClick={() => toggleFavorite(book.id)}
+          className="p-1 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          title="お気に入り"
+        >
+          <span className={`text-base sm:text-lg ${book.favorite ? 'text-red-500' : 'text-gray-400'}`}>
+            {book.favorite ? '♥' : '♡'}
+          </span>
+        </button>
+        
+        <button
+          onClick={() => handleEditBook(book.id)}
+          className="p-1 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500"
+          title="編集"
+        >
+          <span className="text-base sm:text-lg">⋯</span>
+        </button>
+        
+        <button
+          onClick={() => handleDeleteBook(book.id)}
+          className="p-1 sm:p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+          title="削除"
+        >
+          <span className="text-base sm:text-lg">×</span>
+        </button>
+      </>
+    )}
+  </div>
+</div>
                 </div>
               </div>
             );
